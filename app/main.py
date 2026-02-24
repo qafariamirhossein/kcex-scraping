@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.config import config
 from app.core.client import BaseClient
 from app.services.account import AccountService
-from app.services.orders import OrderService
 from app.services.market import MarketService
 from app.utils.logger import logger
 
@@ -28,7 +27,6 @@ def main():
     try:
         # Initialize services
         account_service = AccountService(client)
-        order_service = OrderService(client)
         market_service = MarketService(client)
         
         # Get account assets
@@ -38,15 +36,6 @@ def main():
         print("=" * 50)
         print("Account Assets Response:")
         print(assets)
-        print("=" * 50)
-        
-        # Get available languages
-        logger.info("Fetching available languages...")
-        languages = account_service.get_available_languages()
-        
-        print("\n" + "=" * 50)
-        print("Available Languages Response:")
-        print(languages)
         print("=" * 50)
         
         # Get contract ticker (futures market data)
