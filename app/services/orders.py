@@ -1,6 +1,6 @@
 """Order service for managing orders."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
 from app.utils.logger import logger
@@ -17,6 +17,8 @@ class OrderService:
         """
         self.client = client
         logger.info("OrderService initialized")
+    
+    # ==================== Order History ====================
     
     def get_order_history(
         self,

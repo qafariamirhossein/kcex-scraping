@@ -1,6 +1,6 @@
 """Account service for retrieving account information."""
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
 from app.utils.logger import logger
@@ -17,6 +17,8 @@ class AccountService:
         """
         self.client = client
         logger.info("AccountService initialized")
+    
+    # ==================== Account Info ====================
     
     def get_assets(self) -> Dict[str, Any]:
         """Get account assets information.

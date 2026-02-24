@@ -103,160 +103,7 @@ class FuturesService:
         logger.debug(f"Cancel order response: {response}")
         return response
     
-    def get_open_orders(
-        self,
-        symbol: Optional[str] = None,
-        order_id: Optional[int] = None,
-        start_time: Optional[int] = None,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """Get open orders.
-        
-        Calls:
-            GET /fapi/v1/private/order/list
-        
-        Args:
-            symbol: Trading symbol (optional)
-            order_id: Order ID to start from
-            start_time: Start time in milliseconds
-            limit: Maximum number of orders to return
-        
-        Returns:
-            Dictionary containing open orders
-        """
-        logger.info(f"Fetching open orders for {symbol or 'all symbols'}")
-        
-        params = {"limit": limit}
-        
-        if symbol is not None:
-            params["symbol"] = symbol
-        if order_id is not None:
-            params["order_id"] = order_id
-        if start_time is not None:
-            params["start_time"] = start_time
-        
-        # Try different endpoint paths
-        try:
-            response = self.client.get("/fapi/v1/private/order/list", params=params)
-        except Exception as e:
-            logger.debug(f"First attempt failed, trying alternative endpoint: {e}")
-            response = self.client.get("/fapi/v1/private/order/list/open", params=params)
-        
-        logger.debug(f"Open orders response: {response}")
-        return response
-    
-    def get_order_history(
-        self,
-        symbol: Optional[str] = None,
-        order_id: Optional[int] = None,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """Get order history.
-        
-        Calls:
-            GET /fapi/v1/private/order/list/history
-        
-        Args:
-            symbol: Trading symbol (optional)
-            order_id: Order ID to start from
-            start_time: Start time in milliseconds
-            end_time: End time in milliseconds
-            limit: Maximum number of orders to return
-        
-        Returns:
-            Dictionary containing order history
-        """
-        logger.info(f"Fetching order history for {symbol or 'all symbols'}")
-        
-        params = {"limit": limit}
-        
-        if symbol is not None:
-            params["symbol"] = symbol
-        if order_id is not None:
-            params["order_id"] = order_id
-        if start_time is not None:
-            params["start_time"] = start_time
-        if end_time is not None:
-            params["end_time"] = end_time
-        
-        response = self.client.get("/fapi/v1/private/order/list/history", params=params)
-        logger.debug(f"Order history response: {response}")
-        return response
-    
-    def get_order_details(
-        self,
-        symbol: str,
-        order_id: Optional[int] = None,
-        client_order_id: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get order details.
-        
-        Calls:
-            GET /fapi/v1/private/order
-        
-        Args:
-            symbol: Trading symbol
-            order_id: Order ID
-            client_order_id: Client order ID
-        
-        Returns:
-            Dictionary containing order details
-        """
-        logger.info(f"Fetching order details for {symbol}")
-        
-        params = {"symbol": symbol}
-        
-        if order_id is not None:
-            params["order_id"] = order_id
-        elif client_order_id is not None:
-            params["client_order_id"] = client_order_id
-        
-        response = self.client.get("/fapi/v1/private/order", params=params)
-        logger.debug(f"Order details response: {response}")
-        return response
-    
     # ==================== Position Management ====================
-    
-    def get_positions(
-        self,
-        symbol: Optional[str] = None,
-        position_id: Optional[int] = None
-    ) -> Dict[str, Any]:
-        """Get positions.
-        
-        Calls:
-            GET /fapi/v1/private/position/list
-        
-        Args:
-            symbol: Trading symbol (optional)
-            position_id: Position ID (optional)
-        
-        Returns:
-            Dictionary containing positions
-        """
-        logger.info(f"Fetching positions for {symbol or 'all symbols'}")
-        
-        params = {}
-        
-        if symbol is not None:
-            params["symbol"] = symbol
-        if position_id is not None:
-            params["position_id"] = position_id
-        
-        # Try different endpoint paths
-        try:
-            response = self.client.get("/fapi/v1/private/position/list", params=params)
-        except Exception as e:
-            logger.debug(f"First attempt failed, trying alternative: {e}")
-            try:
-                response = self.client.get("/fapi/v1/private/position", params=params)
-            except:
-                response = self.client.get("/fapi/v1/private/position/all", params=params)
-        
-        logger.debug(f"Positions response: {response}")
-        return response
     
     def set_leverage(
         self,
@@ -412,154 +259,18 @@ class FuturesService:
         """Get futures account information.
         
         Calls:
-            GET /fapi/v1/private/account/info
+            GET /fapi/v1/private/account/assets
         
         Returns:
             Dictionary containing account information
         """
         logger.info("Fetching futures account info")
         
-        response = self.client.get("/fapi/v1/private/account/info")
+        response = self.client.get("/fapi/v1/private/account/assets")
         logger.debug(f"Account info response: {response}")
         return response
     
     # ==================== Market Data ====================
-    
-    def get_klines(
-        self,
-        symbol: str,
-        interval: str,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: int = 500
-    ) -> Dict[str, Any]:
-        """Get kline/candlestick data.
-        
-        Calls:
-            GET /fapi/v1/public/market/klines
-        
-        Args:
-            symbol: Trading symbol (e.g., "BTCUSDT")
-            interval: Kline interval (1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
-            start_time: Start time in milliseconds
-            end_time: End time in milliseconds
-            limit: Maximum number of klines to return
-        
-        Returns:
-            Dictionary containing kline data
-        """
-        logger.info(f"Fetching klines for {symbol} {interval}")
-        
-        params = {
-            "symbol": symbol,
-            "interval": interval,
-            "limit": limit
-        }
-        
-        if start_time is not None:
-            params["start_time"] = start_time
-        if end_time is not None:
-            params["end_time"] = end_time
-        
-        response = self.client.get("/fapi/v1/public/market/klines", params=params)
-        logger.debug(f"Klines response: {response}")
-        return response
-    
-    def get_depth(
-        self,
-        symbol: str,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """Get market depth (order book).
-        
-        Calls:
-            GET /fapi/v1/public/market/depth
-        
-        Args:
-            symbol: Trading symbol (e.g., "BTCUSDT")
-            limit: Number of orders to return (5, 10, 20, 50, 100)
-        
-        Returns:
-            Dictionary containing order book depth
-        """
-        logger.info(f"Fetching depth for {symbol}")
-        
-        params = {
-            "symbol": symbol,
-            "limit": limit
-        }
-        
-        response = self.client.get("/fapi/v1/public/market/depth", params=params)
-        logger.debug(f"Depth response: {response}")
-        return response
-    
-    def get_ticker(
-        self,
-        symbol: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Get 24hr ticker price change statistics.
-        
-        Calls:
-            GET /fapi/v1/public/market/ticker
-        
-        Args:
-            symbol: Trading symbol (optional - if not provided, returns all tickers)
-        
-        Returns:
-            Dictionary containing ticker information
-        """
-        logger.info(f"Fetching ticker for {symbol or 'all symbols'}")
-        
-        params = {}
-        if symbol is not None:
-            params["symbol"] = symbol
-        
-        response = self.client.get("/fapi/v1/public/market/ticker", params=params)
-        logger.debug(f"Ticker response: {response}")
-        return response
-    
-    def get_trades(
-        self,
-        symbol: str,
-        limit: int = 100
-    ) -> Dict[str, Any]:
-        """Get recent trades.
-        
-        Calls:
-            GET /fapi/v1/public/market/trades
-        
-        Args:
-            symbol: Trading symbol (e.g., "BTCUSDT")
-            limit: Number of trades to return
-        
-        Returns:
-            Dictionary containing recent trades
-        """
-        logger.info(f"Fetching recent trades for {symbol}")
-        
-        params = {
-            "symbol": symbol,
-            "limit": limit
-        }
-        
-        response = self.client.get("/fapi/v1/public/market/trades", params=params)
-        logger.debug(f"Trades response: {response}")
-        return response
-    
-    def get_exchange_info(self) -> Dict[str, Any]:
-        """Get exchange information (symbols, limits, etc.).
-        
-        Calls:
-            GET /fapi/v1/public/market/exchange_info
-        
-        Returns:
-            Dictionary containing exchange information
-        """
-        logger.info("Fetching exchange info")
-        
-        response = self.client.get("/fapi/v1/public/market/exchange_info")
-        logger.debug(f"Exchange info response: {response}")
-        return response
     
     def get_funding_rate(
         self,
@@ -568,7 +279,7 @@ class FuturesService:
         """Get current funding rate.
         
         Calls:
-            GET /fapi/v1/public/market/funding_rate
+            GET /fapi/v1/contract/funding_rate
         
         Args:
             symbol: Trading symbol (e.g., "BTCUSDT")
@@ -580,31 +291,8 @@ class FuturesService:
         
         params = {"symbol": symbol}
         
-        response = self.client.get("/fapi/v1/public/market/funding_rate", params=params)
+        response = self.client.get("/fapi/v1/contract/funding_rate", params=params)
         logger.debug(f"Funding rate response: {response}")
-        return response
-    
-    def get_open_interest(
-        self,
-        symbol: str
-    ) -> Dict[str, Any]:
-        """Get open interest.
-        
-        Calls:
-            GET /fapi/v1/public/market/open_interest
-        
-        Args:
-            symbol: Trading symbol (e.g., "BTCUSDT")
-        
-        Returns:
-            Dictionary containing open interest information
-        """
-        logger.info(f"Fetching open interest for {symbol}")
-        
-        params = {"symbol": symbol}
-        
-        response = self.client.get("/fapi/v1/public/market/open_interest", params=params)
-        logger.debug(f"Open interest response: {response}")
         return response
     
     # ==================== Risk Management ====================
@@ -710,3 +398,183 @@ class FuturesService:
                     )
         
         return {"code": -1, "msg": "No position to close"}
+    
+    # ==================== Advanced Order Types ====================
+    
+    def place_limit_order(
+        self,
+        symbol: str,
+        side: str,
+        position_side: str,
+        quantity: float,
+        price: float,
+        reduce_only: bool = False,
+        time_in_force: str = "GTC"
+    ) -> Dict[str, Any]:
+        """Place a limit order.
+        
+        Args:
+            symbol: Trading symbol
+            side: Order side ("BUY" or "SELL")
+            position_side: Position direction
+            quantity: Order quantity
+            price: Limit price
+            reduce_only: Whether to reduce only
+            time_in_force: Time in force ("GTC", "IOC", "FOK")
+        
+        Returns:
+            Dictionary containing order response
+        """
+        logger.info(f"Placing limit {side} order for {symbol} at {price}")
+        
+        return self.place_order(
+            symbol=symbol,
+            side=side,
+            position_side=position_side,
+            order_type="LIMIT",
+            quantity=quantity,
+            price=price,
+            reduce_only=reduce_only,
+            time_in_force=time_in_force
+        )
+    
+    def place_market_order(
+        self,
+        symbol: str,
+        side: str,
+        position_side: str,
+        quantity: float,
+        reduce_only: bool = False
+    ) -> Dict[str, Any]:
+        """Place a market order.
+        
+        Args:
+            symbol: Trading symbol
+            side: Order side ("BUY" or "SELL")
+            position_side: Position direction
+            quantity: Order quantity
+            reduce_only: Whether to reduce only
+        
+        Returns:
+            Dictionary containing order response
+        """
+        logger.info(f"Placing market {side} order for {symbol}")
+        
+        return self.place_order(
+            symbol=symbol,
+            side=side,
+            position_side=position_side,
+            order_type="MARKET",
+            quantity=quantity,
+            reduce_only=reduce_only
+        )
+    
+    def place_stop_limit_order(
+        self,
+        symbol: str,
+        side: str,
+        position_side: str,
+        quantity: float,
+        price: float,
+        stop_price: float,
+        reduce_only: bool = False,
+        time_in_force: str = "GTC"
+    ) -> Dict[str, Any]:
+        """Place a stop-limit order.
+        
+        Args:
+            symbol: Trading symbol
+            side: Order side ("BUY" or "SELL")
+            position_side: Position direction
+            quantity: Order quantity
+            price: Limit price
+            stop_price: Stop trigger price
+            reduce_only: Whether to reduce only
+            time_in_force: Time in force ("GTC", "IOC", "FOK")
+        
+        Returns:
+            Dictionary containing order response
+        """
+        logger.info(f"Placing stop-limit {side} order for {symbol} at {stop_price} -> {price}")
+        
+        return self.place_order(
+            symbol=symbol,
+            side=side,
+            position_side=position_side,
+            order_type="STOP",
+            quantity=quantity,
+            price=price,
+            stop_price=stop_price,
+            reduce_only=reduce_only,
+            time_in_force=time_in_force
+        )
+    
+    def place_stop_market_order(
+        self,
+        symbol: str,
+        side: str,
+        position_side: str,
+        quantity: float,
+        stop_price: float,
+        reduce_only: bool = False
+    ) -> Dict[str, Any]:
+        """Place a stop-market order.
+        
+        Args:
+            symbol: Trading symbol
+            side: Order side ("BUY" or "SELL")
+            position_side: Position direction
+            quantity: Order quantity
+            stop_price: Stop trigger price
+            reduce_only: Whether to reduce only
+        
+        Returns:
+            Dictionary containing order response
+        """
+        logger.info(f"Placing stop-market {side} order for {symbol} at {stop_price}")
+        
+        return self.place_order(
+            symbol=symbol,
+            side=side,
+            position_side=position_side,
+            order_type="STOP_MARKET",
+            quantity=quantity,
+            stop_price=stop_price,
+            reduce_only=reduce_only
+        )
+    
+    def place_take_profit_market_order(
+        self,
+        symbol: str,
+        side: str,
+        position_side: str,
+        quantity: float,
+        stop_price: float,
+        reduce_only: bool = True
+    ) -> Dict[str, Any]:
+        """Place a take-profit-market order.
+        
+        Args:
+            symbol: Trading symbol
+            side: Order side ("BUY" or "SELL")
+            position_side: Position direction
+            quantity: Order quantity
+            stop_price: Take profit trigger price
+            reduce_only: Whether to reduce only
+        
+        Returns:
+            Dictionary containing order response
+        """
+        logger.info(f"Placing take-profit-market {side} order for {symbol} at {stop_price}")
+        
+        return self.place_order(
+            symbol=symbol,
+            side=side,
+            position_side=position_side,
+            order_type="TAKE_PROFIT_MARKET",
+            quantity=quantity,
+            stop_price=stop_price,
+            reduce_only=reduce_only
+        )
+    
+
