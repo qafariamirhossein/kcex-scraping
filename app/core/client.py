@@ -26,18 +26,22 @@ class BaseClient:
         "language": "en-US",
         "version": "1.0.0",
         "os": "macOS",
+        "timezone": "UTC+03:30",
+        "accept-timezone": "UTC+03:30",
     }
     
-    def __init__(self, base_url: Optional[str] = None, timeout: int = 30):
+    def __init__(self, base_url: Optional[str] = None, timeout: int = 30, user_device: Optional[str] = None):
         """Initialize the base client.
         
         Args:
             base_url: Base URL for the API (defaults to KCEX_BASE_URL from config)
             timeout: Request timeout in seconds
+            user_device: Optional user-device header value (base64 encoded device info)
         """
         self.base_url = (base_url or config.KCEX_BASE_URL).rstrip("/")
         self.timeout = timeout
         self.auth_token = config.KCEX_AUTH_TOKEN
+        self.user_device = user_device
         self.client = httpx.Client(timeout=timeout)
         logger.info(f"BaseClient initialized with base_url: {self.base_url}")
     
@@ -61,6 +65,8 @@ class BaseClient:
         headers = self.DEFAULT_HEADERS.copy()
         if self.auth_token:
             headers["authorization"] = self.auth_token
+        if self.user_device:
+            headers["user-device"] = self.user_device
         return headers
     
     def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:

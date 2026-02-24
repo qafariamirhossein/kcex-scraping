@@ -45,3 +45,22 @@ class AccountService:
         response = self.client.get("/uc/user_api/page_lang/available")
         logger.debug(f"Languages response: {response}")
         return response
+    
+    def get_user_info(self) -> Dict[str, Any]:
+        """Get user account information.
+        
+        Calls:
+            GET /uc/user_api/user_info
+        
+        Returns:
+            Dictionary containing user information including:
+            - User ID
+            - Email
+            - Account status
+            - KYC status
+            - Other profile details
+        """
+        logger.info("Fetching user info")
+        response = self.client.get("/uc/user_api/user_info")
+        logger.debug(f"User info response: {response}")
+        return response

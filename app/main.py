@@ -29,11 +29,20 @@ def main():
         account_service = AccountService(client)
         market_service = MarketService(client)
         
+        # Get user info
+        logger.info("Fetching user info...")
+        user_info = account_service.get_user_info()
+        
+        print("=" * 50)
+        print("User Info Response:")
+        print(user_info)
+        print("=" * 50)
+        
         # Get account assets
         logger.info("Fetching account assets...")
         assets = account_service.get_assets()
         
-        print("=" * 50)
+        print("\n" + "=" * 50)
         print("Account Assets Response:")
         print(assets)
         print("=" * 50)
