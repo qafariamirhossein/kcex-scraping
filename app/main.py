@@ -10,6 +10,7 @@ from app.config import config
 from app.core.client import BaseClient
 from app.services.account import AccountService
 from app.services.orders import OrderService
+from app.services.market import MarketService
 from app.utils.logger import logger
 
 
@@ -28,6 +29,7 @@ def main():
         # Initialize services
         account_service = AccountService(client)
         order_service = OrderService(client)
+        market_service = MarketService(client)
         
         # Get account assets
         logger.info("Fetching account assets...")
@@ -45,6 +47,15 @@ def main():
         print("\n" + "=" * 50)
         print("Available Languages Response:")
         print(languages)
+        print("=" * 50)
+        
+        # Get contract ticker (futures market data)
+        logger.info("Fetching ETH_USDT contract ticker...")
+        ticker = market_service.get_contract_ticker("ETH_USDT")
+        
+        print("\n" + "=" * 50)
+        print("Contract Ticker Response:")
+        print(ticker)
         print("=" * 50)
         
     except Exception as e:
