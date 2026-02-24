@@ -14,10 +14,9 @@ load_dotenv(env_path)
 class Config:
     """Configuration class for the trading bot."""
     
-    # API Configuration
-    API_BASE_URL: str = os.getenv("API_BASE_URL", "https://api.example.com")
-    API_KEY: Optional[str] = os.getenv("API_KEY")
-    API_SECRET: Optional[str] = os.getenv("API_SECRET")
+    # KCEX API Configuration
+    KCEX_BASE_URL: str = os.getenv("KCEX_BASE_URL", "https://www.kcex.com")
+    KCEX_AUTH_TOKEN: str = os.getenv("KCEX_AUTH_TOKEN", "")
     
     # HTTP Configuration
     HTTP_TIMEOUT: int = int(os.getenv("HTTP_TIMEOUT", "30"))

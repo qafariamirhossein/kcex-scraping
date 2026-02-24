@@ -3,7 +3,7 @@
 import httpx
 from typing import Any, Dict, Optional
 
-from app.core.auth import generate_headers
+from app.config import config
 from app.utils.logger import logger
 
 
@@ -17,19 +17,29 @@ class APIError(Exception):
 
 
 class BaseClient:
-    """Base HTTP client for making API requests."""
+    """Base HTTP client for making API requests with KCEX WEB token auth."""
     
-    def __init__(self, base_url: str, timeout: int = 30):
+    # Default headers required by KCEX
+    DEFAULT_HEADERS = {
+        "accept": "application/json, text/plain, */*",
+        "platform": "WEB",
+        "language": "en-US",
+        "version": "1.0.0",
+        "os": "macOS",
+    }
+    
+    def __init__(self, base_url: Optional[str] = None, timeout: int = 30):
         """Initialize the base client.
         
         Args:
-            base_url: Base URL for the API
+            base_url: Base URL for the API (defaults to KCEX_BASE_URL from config)
             timeout: Request timeout in seconds
         """
-        self.base_url = base_url.rstrip("/")
+        self.base_url = (base_url or config.KCEX_BASE_URL).rstrip("/")
         self.timeout = timeout
+        self.auth_token = config.KCEX_AUTH_TOKEN
         self.client = httpx.Client(timeout=timeout)
-        logger.info(f"BaseClient initialized with base_url: {base_url}")
+        logger.info(f"BaseClient initialized with base_url: {self.base_url}")
     
     def _build_url(self, path: str) -> str:
         """Build the full URL from path.
@@ -41,6 +51,17 @@ class BaseClient:
             Full URL
         """
         return f"{self.base_url}{path}"
+    
+    def _get_headers(self) -> Dict[str, str]:
+        """Get headers with authentication token.
+        
+        Returns:
+            Dictionary of headers including authorization
+        """
+        headers = self.DEFAULT_HEADERS.copy()
+        if self.auth_token:
+            headers["authorization"] = self.auth_token
+        return headers
     
     def _request(self, method: str, path: str, **kwargs) -> Dict[str, Any]:
         """Make an HTTP request with authentication.
@@ -58,11 +79,8 @@ class BaseClient:
         """
         url = self._build_url(path)
         
-        # Get request body if provided
-        body = kwargs.get("json") or kwargs.get("data")
-        
-        # Generate authentication headers
-        headers = generate_headers(method, path, body)
+        # Get headers with auth token
+        headers = self._get_headers()
         
         # Merge with any additional headers
         if "headers" in kwargs:

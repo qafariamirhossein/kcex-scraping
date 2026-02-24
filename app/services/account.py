@@ -31,3 +31,17 @@ class AccountService:
         response = self.client.get("/fapi/v1/private/account/assets")
         logger.debug(f"Assets response: {response}")
         return response
+    
+    def get_available_languages(self) -> Dict[str, Any]:
+        """Get available languages for the platform.
+        
+        Calls:
+            GET /uc/user_api/page_lang/available
+        
+        Returns:
+            Dictionary containing available languages
+        """
+        logger.info("Fetching available languages")
+        response = self.client.get("/uc/user_api/page_lang/available")
+        logger.debug(f"Languages response: {response}")
+        return response
