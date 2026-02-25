@@ -63,3 +63,36 @@ class AccountService:
         response = self.client.get("/uc/user_api/user_info")
         logger.debug(f"User info response: {truncate_response(str(response))}")
         return response
+    
+    # ==================== Asset Transfer ====================
+    
+    def transfer(
+        self,
+        from_wallet: str,
+        to_wallet: str,
+        currency: str,
+        amount: str
+    ) -> Dict[str, Any]:
+        """Transfer funds between wallets.
+        
+        Calls:
+            POST /api/platform/asset/api/asset/transfer
+        
+        Args:
+            from_wallet: Source wallet (e.g., "MAIN", "SPOT", "SWAP", "FUTURES")
+            to_wallet: Destination wallet (e.g., "MAIN", "SPOT", "SWAP", "FUTURES")
+            currency: Currency code (e.g., "USDT", "BTC", "ETH")
+            amount: Amount to transfer as string or number
+        
+        Returns:
+            Dictionary containing transfer result
+        """
+        payload = {
+            "from": from_wallet,
+            "to": to_wallet,
+            "currency": currency,
+            "amount": str(amount)
+        }
+        response = self.client.post("/api/platform/asset/api/asset/transfer", json=payload)
+        logger.debug(f"Transfer response: {truncate_response(str(response))}")
+        return response

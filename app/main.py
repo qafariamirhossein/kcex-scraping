@@ -69,6 +69,21 @@ def main():
         print(languages)
         print("=" * 50)
         
+        # Test asset transfer (MAIN to SWAP)
+        logger.info("Testing asset transfer from MAIN to SWAP...")
+        transfer_result = test_endpoint(
+            account_service.transfer,
+            from_wallet="MAIN",
+            to_wallet="SWAP",
+            currency="USDT",
+            amount="3"
+        )
+        
+        print("\n" + "=" * 50)
+        print("Transfer Response:")
+        print(transfer_result)
+        print("=" * 50)
+        
         # ==================== Market Service Tests ====================
         
         # Get contract ticker
