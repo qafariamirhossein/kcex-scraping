@@ -275,6 +275,28 @@ class FuturesService:
         logger.debug(f"Set position mode response: {truncate_response(str(response))}")
         return response
     
+    # ==================== System Balances ====================
+    
+    def get_sys_balances(self, sys: str = "SWAP") -> Dict[str, Any]:
+        """Get system balances for a specific system (e.g., SWAP).
+        
+        Calls:
+            GET /api/platform/asset/sys_balances
+        
+        Args:
+            sys: System type (default: "SWAP")
+        
+        Returns:
+            Dictionary containing system balances information
+        """
+        logger.info(f"Getting {sys} system balances")
+        
+        params = {"sys": sys}
+        
+        response = self.client.get("/api/platform/asset/sys_balances", params=params)
+        logger.debug(f"Sys balances response: {truncate_response(str(response))}")
+        return response
+    
     # ==================== Account & Balance ====================
     
     def get_balance(self, asset: Optional[str] = None) -> Dict[str, Any]:

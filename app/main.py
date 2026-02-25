@@ -255,6 +255,20 @@ def main():
         except Exception as e:
             logger.warning(f"Set position mode test failed: {e}")
         
+        # Test get sys balances
+        logger.info("Testing get_sys_balances endpoint...")
+        try:
+            sys_balances_result = test_endpoint(
+                futures_service.get_sys_balances,
+                sys="SWAP"
+            )
+            print("\n" + "=" * 50)
+            print("Sys Balances Response:")
+            print(sys_balances_result)
+            print("=" * 50)
+        except Exception as e:
+            logger.warning(f"Sys balances test failed: {e}")
+        
         print("\n" + "=" * 50)
         print("ALL ENDPOINTS TESTED SUCCESSFULLY!")
         print("(Some endpoints may have failed - check logs above)")
