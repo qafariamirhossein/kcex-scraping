@@ -89,6 +89,10 @@ SERVICES = {
                 "args": ["symbol", "side", "open_type", "order_type", "volume", "leverage", "price"],
                 "required": ["symbol", "side"]
             },
+            "close_position": {
+                "args": ["symbol", "position_id", "side", "open_type", "order_type", "volume", "leverage", "price", "flash_close", "price_protect"],
+                "required": ["symbol", "position_id", "side"]
+            },
             "get_order_history": {"args": ["symbol", "start_time", "end_time"]}
         }
     }
@@ -241,6 +245,9 @@ Examples:
     parser.add_argument("--amount", type=str, help="Amount to transfer")
     parser.add_argument("--open_type", type=int, help="Open type (1=open position)")
     parser.add_argument("--volume", type=int, help="Order volume")
+    parser.add_argument("--position_id", type=int, help="Position ID to close")
+    parser.add_argument("--flash_close", type=lambda x: x.lower() == "true", help="Flash close (true/false)")
+    parser.add_argument("--price_protect", type=str, help="Price protect (0/1)")
     
     args = parser.parse_args()
     
@@ -322,6 +329,12 @@ Examples:
         method_args["open_type"] = args.open_type
     if args.volume is not None:
         method_args["volume"] = args.volume
+    if args.position_id is not None:
+        method_args["position_id"] = args.position_id
+    if args.flash_close is not None:
+        method_args["flash_close"] = args.flash_close
+    if args.price_protect is not None:
+        method_args["price_protect"] = args.price_protect
     
     # Call the method
     call_method(args.service, args.method, method_args)
