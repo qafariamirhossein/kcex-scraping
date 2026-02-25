@@ -128,16 +128,19 @@ class BaseClient:
         """
         return self._request("GET", path, params=params)
     
-    def post(self, path: str, json: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def post(self, path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """Make a POST request.
         
         Args:
             path: API endpoint path
             json: JSON body for the request
+            headers: Additional headers to include (e.g., content-sign, content-time)
         
         Returns:
             Response data as dictionary
         """
+        if headers:
+            return self._request("POST", path, json=json, headers=headers)
         return self._request("POST", path, json=json)
     
     def close(self):
