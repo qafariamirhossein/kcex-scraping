@@ -244,7 +244,7 @@ Examples:
     parser.add_argument("--currency", type=str, help="Currency code")
     parser.add_argument("--amount", type=str, help="Amount to transfer")
     parser.add_argument("--open_type", type=int, help="Open type (1=open position)")
-    parser.add_argument("--volume", type=int, help="Order volume")
+    parser.add_argument("--volume", type=float, help="Order volume")
     parser.add_argument("--position_id", type=int, help="Position ID to close")
     parser.add_argument("--flash_close", type=lambda x: x.lower() == "true", help="Flash close (true/false)")
     parser.add_argument("--price_protect", type=str, help="Price protect (0/1)")
