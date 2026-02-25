@@ -18,6 +18,51 @@ class FuturesService:
         self.client = client
         logger.info("FuturesService initialized")
     
+    # ==================== Order History ====================
+    
+    def get_history_orders(
+        self,
+        symbol: str,
+        start_time: int,
+        end_time: int,
+        category: int = 1,
+        states: int = 3,
+        page_num: int = 1,
+        page_size: int = 400
+    ) -> Dict[str, Any]:
+        """Get history orders.
+        
+        Calls:
+            GET /fapi/v1/private/order/list/history_orders
+        
+        Args:
+            symbol: Trading symbol (e.g., "BTC_USDT")
+            start_time: Start time in milliseconds
+            end_time: End time in milliseconds
+            category: Category (default: 1)
+            states: Order states filter (default: 3)
+            page_num: Page number (default: 1)
+            page_size: Page size (default: 400)
+        
+        Returns:
+            Dictionary containing history orders
+        """
+        logger.info(f"Getting history orders for {symbol}")
+        
+        params = {
+            "symbol": symbol,
+            "start_time": start_time,
+            "end_time": end_time,
+            "category": category,
+            "states": states,
+            "page_num": page_num,
+            "page_size": page_size
+        }
+        
+        response = self.client.get("/fapi/v1/private/order/list/history_orders", params=params)
+        logger.debug(f"History orders response: {truncate_response(str(response))}")
+        return response
+    
     # ==================== Order Management ====================
     
     def place_order(

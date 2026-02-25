@@ -177,6 +177,22 @@ def main():
         except Exception as e:
             logger.warning(f"Cancel order test failed: {e}")
         
+        # Test get history orders
+        logger.info("Testing get_history_orders endpoint...")
+        try:
+            history_orders = test_endpoint(
+                futures_service.get_history_orders,
+                symbol="BTC_USDT",
+                start_time=1769414966927,
+                end_time=1772006966927
+            )
+            print("\n" + "=" * 50)
+            print("History Orders Response:")
+            print(history_orders)
+            print("=" * 50)
+        except Exception as e:
+            logger.warning(f"History orders test failed: {e}")
+        
 
         
         # Test set leverage
