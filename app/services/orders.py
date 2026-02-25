@@ -87,6 +87,75 @@ class OrderService:
         logger.debug(f"Create order response: {truncate_response(str(response))}")
         return response
     
+    # ==================== Close Position ====================
+    
+    def close_position(
+        self,
+        symbol: str,
+        position_id: int,
+        side: int,
+        open_type: int = 1,
+        order_type: str = "1",
+        volume: int = 1,
+        leverage: int = 20,
+        price: Optional[str] = None,
+        flash_close: bool = False,
+        price_protect: str = "0",
+        content_sign: Optional[str] = None,
+        content_time: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Close an existing futures position.
+        
+        Calls:
+            POST /fapi/v1/private/order/create
+        
+        Args:
+            symbol: Trading symbol (e.g., "TRUMP_USDT", "BTC_USDT")
+            position_id: The position ID to close
+            side: Order side (1 = BUY to close SELL, 3 = SELL to close BUY)
+            open_type: Open type (1 = open position, 2 = close position)
+            order_type: Order type ("1" = Limit, "2" = Market, etc.)
+            volume: Order volume/quantity
+            leverage: Leverage level (e.g., 20)
+            price: Order price (required for limit orders)
+            flash_close: Flash close flag
+            price_protect: Price protection flag ("0" = disabled, "1" = enabled)
+            content_sign: Optional content signature header
+            content_time: Optional content timestamp header (milliseconds)
+        
+        Returns:
+            Dictionary containing order creation response
+        """
+        logger.info(f"Closing position {position_id} for {symbol}: side={side}, type={order_type}, vol={volume}")
+        
+        data = {
+            "symbol": symbol,
+            "positionId": position_id,
+            "side": side,
+            "openType": open_type,
+            "type": order_type,
+            "vol": volume,
+            "leverage": leverage,
+            "flashClose": flash_close,
+            "priceProtect": price_protect
+        }
+        
+        if price is not None:
+            data["price"] = price
+        
+        # Build additional headers if provided
+        extra_headers = None
+        if content_sign or content_time:
+            extra_headers = {}
+            if content_sign:
+                extra_headers["content-sign"] = content_sign
+            if content_time:
+                extra_headers["content-time"] = content_time
+        
+        response = self.client.post("/fapi/v1/private/order/create", json=data, headers=extra_headers)
+        logger.debug(f"Close position response: {truncate_response(str(response))}")
+        return response
+    
     # ==================== Order History ====================
     
     def get_order_history(
