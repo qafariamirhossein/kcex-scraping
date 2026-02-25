@@ -62,13 +62,13 @@ class OrderService:
         data = {
             "symbol": symbol,
             "side": side,
-            "openType": open_type,
-            "type": order_type,
+            "openType": open_type, # 1 = open position
+            "type": order_type, # To buy = 1
             "vol": volume,
             "leverage": leverage,
-            "marketCeiling": market_ceiling,
-            "priceProtect": price_protect,
-            "bboPriceType": bbo_price_type
+            "marketCeiling": market_ceiling, # False
+            "priceProtect": price_protect, # "0"
+            "bboPriceType": bbo_price_type # "1"
         }
         
         if price is not None:
