@@ -4,7 +4,7 @@ import httpx
 from typing import Any, Dict, Optional
 
 from app.config import config
-from app.utils.logger import logger
+from app.utils.logger import logger, truncate_response
 
 
 class APIError(Exception):
@@ -103,7 +103,7 @@ class BaseClient:
             )
             
             if response.status_code >= 400:
-                logger.error(f"API request failed: {response.status_code} - {response.text}")
+                logger.error(f"API request failed: {response.status_code} - {truncate_response(str(response.text))}")
                 raise APIError(
                     message=f"API request failed: {response.text}",
                     status_code=response.status_code

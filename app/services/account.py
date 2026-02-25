@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
-from app.utils.logger import logger
+from app.utils.logger import logger, truncate_response
 
 
 class AccountService:
@@ -29,9 +29,8 @@ class AccountService:
         Returns:
             Dictionary containing account assets information
         """
-        logger.info("Fetching account assets")
         response = self.client.get("/fapi/v1/private/account/assets")
-        logger.debug(f"Assets response: {response}")
+        logger.debug(f"Assets response: {truncate_response(str(response))}")
         return response
     
     def get_available_languages(self) -> Dict[str, Any]:
@@ -43,9 +42,8 @@ class AccountService:
         Returns:
             Dictionary containing available languages
         """
-        logger.info("Fetching available languages")
         response = self.client.get("/uc/user_api/page_lang/available")
-        logger.debug(f"Languages response: {response}")
+        logger.debug(f"Languages response: {truncate_response(str(response))}")
         return response
     
     def get_user_info(self) -> Dict[str, Any]:
@@ -62,7 +60,6 @@ class AccountService:
             - KYC status
             - Other profile details
         """
-        logger.info("Fetching user info")
         response = self.client.get("/uc/user_api/user_info")
-        logger.debug(f"User info response: {response}")
+        logger.debug(f"User info response: {truncate_response(str(response))}")
         return response

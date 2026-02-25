@@ -5,6 +5,22 @@ import sys
 from pathlib import Path
 
 
+def truncate_response(message: str, prefix_len: int = 200, suffix_len: int = 100) -> str:
+    """Truncate a long message to show prefix and suffix.
+    
+    Args:
+        message: The message to truncate
+        prefix_len: Length of the prefix to show (default: 200)
+        suffix_len: Length of the suffix to show (default: 100)
+    
+    Returns:
+        Truncated message if longer than prefix + suffix + "...", otherwise original message
+    """
+    if len(message) <= prefix_len + suffix_len + 5:  # 5 for "..."
+        return message
+    return f"{message[:prefix_len]}...{message[-suffix_len:]}"
+
+
 def setup_logger(name: str = "kcex-bot", level: int = logging.INFO) -> logging.Logger:
     """Configure and return a logger instance.
     

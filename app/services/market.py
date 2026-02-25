@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
-from app.utils.logger import logger
+from app.utils.logger import logger, truncate_response
 
 
 class MarketService:
@@ -30,12 +30,8 @@ class MarketService:
         Returns:
             Dictionary containing contract ticker information (price, 24h change, volume, etc.)
         """
-        logger.info(f"Fetching contract ticker for {symbol}")
-        
-        params = {"symbol": symbol}
-        
         response = self.client.get("/fapi/v1/contract/ticker", params=params)
-        logger.debug(f"Contract ticker response: {response}")
+        logger.debug(f"Contract ticker response: {truncate_response(str(response))}")
         return response
     
     # ==================== Market Data ====================
@@ -49,10 +45,8 @@ class MarketService:
         Returns:
             Dictionary containing all contract tickers
         """
-        logger.info("Fetching all contract tickers")
-        
         response = self.client.get("/fapi/v1/contract/ticker/all")
-        logger.debug(f"All tickers response: {response}")
+        logger.debug(f"All tickers response: {truncate_response(str(response))}")
         return response
     
     def get_contract_list(self) -> Dict[str, Any]:
@@ -64,10 +58,8 @@ class MarketService:
         Returns:
             Dictionary containing all available contracts
         """
-        logger.info("Fetching contract list")
-        
         response = self.client.get("/fapi/v1/contract/all")
-        logger.debug(f"Contract list response: {response}")
+        logger.debug(f"Contract list response: {truncate_response(str(response))}")
         return response
     
     def get_leverage_tiers(self, symbol: Optional[str] = None) -> Dict[str, Any]:
@@ -82,14 +74,8 @@ class MarketService:
         Returns:
             Dictionary containing leverage tier information
         """
-        logger.info(f"Fetching leverage tiers for {symbol or 'all symbols'}")
-        
-        params = {}
-        if symbol is not None:
-            params["symbol"] = symbol
-        
         response = self.client.get("/fapi/v1/contract/leverage_tiers", params=params)
-        logger.debug(f"Leverage tiers response: {response}")
+        logger.debug(f"Leverage tiers response: {truncate_response(str(response))}")
         return response
     
     def get_market_snapshot(
@@ -113,17 +99,8 @@ class MarketService:
         Returns:
             Dictionary containing market snapshot data
         """
-        logger.info(f"Fetching market snapshot for {symbol}")
-        
-        params = {"symbol": symbol, "interval": interval}
-        
-        if start_time is not None:
-            params["start_time"] = start_time
-        if end_time is not None:
-            params["end_time"] = end_time
-        
         response = self.client.get("/fapi/v1/contract/snapshot", params=params)
-        logger.debug(f"Market snapshot response: {response}")
+        logger.debug(f"Market snapshot response: {truncate_response(str(response))}")
         return response
     
     def get_top_long_short_position(
@@ -143,12 +120,8 @@ class MarketService:
         Returns:
             Dictionary containing top trader positions
         """
-        logger.info(f"Fetching top long/short positions for {symbol}")
-        
-        params = {"symbol": symbol, "period": period}
-        
         response = self.client.get("/fapi/v1/contract/top_long_short_position", params=params)
-        logger.debug(f"Top positions response: {response}")
+        logger.debug(f"Top positions response: {truncate_response(str(response))}")
         return response
     
     def get_top_long_short_ratio(
@@ -168,12 +141,8 @@ class MarketService:
         Returns:
             Dictionary containing top trader ratio
         """
-        logger.info(f"Fetching top long/short ratio for {symbol}")
-        
-        params = {"symbol": symbol, "period": period}
-        
         response = self.client.get("/fapi/v1/contract/top_long_short_ratio", params=params)
-        logger.debug(f"Top ratio response: {response}")
+        logger.debug(f"Top ratio response: {truncate_response(str(response))}")
         return response
     
     def get_global_long_short_ratio(
@@ -193,10 +162,6 @@ class MarketService:
         Returns:
             Dictionary containing global long/short ratio
         """
-        logger.info(f"Fetching global long/short ratio for {symbol}")
-        
-        params = {"symbol": symbol, "period": period}
-        
         response = self.client.get("/fapi/v1/contract/global_long_short_ratio", params=params)
-        logger.debug(f"Global ratio response: {response}")
+        logger.debug(f"Global ratio response: {truncate_response(str(response))}")
         return response

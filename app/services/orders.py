@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
-from app.utils.logger import logger
+from app.utils.logger import logger, truncate_response
 
 
 class OrderService:
@@ -39,15 +39,6 @@ class OrderService:
         Returns:
             Dictionary containing order history
         """
-        logger.info(f"Fetching order history for {symbol}")
-        
-        params = {"symbol": symbol}
-        
-        if start_time is not None:
-            params["start_time"] = start_time
-        if end_time is not None:
-            params["end_time"] = end_time
-        
         response = self.client.get("/fapi/v1/private/order/list/order_deals", params=params)
-        logger.debug(f"Order history response: {response}")
+        logger.debug(f"Order history response: {truncate_response(str(response))}")
         return response

@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, List
 
 from app.core.client import BaseClient
-from app.utils.logger import logger
+from app.utils.logger import logger, truncate_response
 
 
 class FuturesService:
@@ -73,7 +73,7 @@ class FuturesService:
             data["stop_price"] = str(stop_price)
         
         response = self.client.post("/fapi/v1/private/order", json=data)
-        logger.debug(f"Place order response: {response}")
+        logger.debug(f"Place order response: {truncate_response(str(response))}")
         return response
     
     def cancel_order(self, symbol: str, order_id: Optional[int] = None, client_order_id: Optional[str] = None) -> Dict[str, Any]:
@@ -100,7 +100,7 @@ class FuturesService:
             data["client_order_id"] = client_order_id
         
         response = self.client.post("/fapi/v1/private/order/cancel", json=data)
-        logger.debug(f"Cancel order response: {response}")
+        logger.debug(f"Cancel order response: {truncate_response(str(response))}")
         return response
     
     # ==================== Position Management ====================
@@ -133,7 +133,7 @@ class FuturesService:
         }
         
         response = self.client.post("/fapi/v1/private/leverage", json=data)
-        logger.debug(f"Set leverage response: {response}")
+        logger.debug(f"Set leverage response: {truncate_response(str(response))}")
         return response
     
     def set_margin_type(
@@ -166,7 +166,7 @@ class FuturesService:
             data["position_side"] = position_side.upper()
         
         response = self.client.post("/fapi/v1/private/marginType", json=data)
-        logger.debug(f"Set margin type response: {response}")
+        logger.debug(f"Set margin type response: {truncate_response(str(response))}")
         return response
     
     def add_margin(
@@ -197,7 +197,7 @@ class FuturesService:
         }
         
         response = self.client.post("/fapi/v1/private/position/add_margin", json=data)
-        logger.debug(f"Add margin response: {response}")
+        logger.debug(f"Add margin response: {truncate_response(str(response))}")
         return response
     
     def set_position_mode(
@@ -227,7 +227,7 @@ class FuturesService:
             data["position_side"] = position_side.upper()
         
         response = self.client.post("/fapi/v1/private/position_mode", json=data)
-        logger.debug(f"Set position mode response: {response}")
+        logger.debug(f"Set position mode response: {truncate_response(str(response))}")
         return response
     
     # ==================== Account & Balance ====================
@@ -244,15 +244,9 @@ class FuturesService:
         Returns:
             Dictionary containing balance information
         """
-        logger.info(f"Fetching futures balance for {asset or 'all assets'}")
-        
-        params = {}
-        if asset is not None:
-            params["asset"] = asset
-        
         # Using account assets endpoint which works
         response = self.client.get("/fapi/v1/private/account/assets", params=params)
-        logger.debug(f"Balance response: {response}")
+        logger.debug(f"Balance response: {truncate_response(str(response))}")
         return response
     
     def get_account_info(self) -> Dict[str, Any]:
@@ -264,10 +258,8 @@ class FuturesService:
         Returns:
             Dictionary containing account information
         """
-        logger.info("Fetching futures account info")
-        
         response = self.client.get("/fapi/v1/private/account/assets")
-        logger.debug(f"Account info response: {response}")
+        logger.debug(f"Account info response: {truncate_response(str(response))}")
         return response
     
     # ==================== Market Data ====================
@@ -287,12 +279,8 @@ class FuturesService:
         Returns:
             Dictionary containing funding rate information
         """
-        logger.info(f"Fetching funding rate for {symbol}")
-        
-        params = {"symbol": symbol}
-        
         response = self.client.get("/fapi/v1/contract/funding_rate", params=params)
-        logger.debug(f"Funding rate response: {response}")
+        logger.debug(f"Funding rate response: {truncate_response(str(response))}")
         return response
     
     # ==================== Risk Management ====================
