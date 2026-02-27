@@ -230,16 +230,67 @@ async def user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Format user info
         try:
             if isinstance(result, dict):
-                user_id = result.get("id", result.get("userId", "N/A"))
-                email = result.get("email", "N/A")
-                status = result.get("status", "N/A")
-                kyc = result.get("kycStatus", result.get("kyc", "N/A"))
+                # Data is nested inside 'data' key
+                data = result.get("data", {})
                 
+                # Extract all relevant fields
+                user_id = data.get("uid", data.get("memberId", "N/A"))
+                email = data.get("email", data.get("account", "N/A"))
+                status = data.get("status", "N/A")
+                kyc = data.get("kycStatus", "N/A")
+                country_code = data.get("countryCode", "N/A")
+                nickname = data.get("nickname", "N/A")
+                auth_level = data.get("authLevel", "N/A")
+                mobile = data.get("mobile", "N/A")
+                invite_code = data.get("inviteCode", "N/A")
+                is_agent = data.get("isAgent", "N/A")
+                
+                # Get KYC level info if available
+                kyc_info = data.get("kycInfo", {})
+                kyc_junior = kyc_info.get("junior")
+                kyc_senior = kyc_info.get("senior")
+                kyc_level1 = kyc_info.get("level1")
+                kyc_level2 = kyc_info.get("level2")
+                kyc_level3 = kyc_info.get("level3")
+                max_auth_times = kyc_info.get("maxAuthTimes")
+                
+                # Format timestamps
+                last_login = data.get("lastLoginTime")
+                register_time = data.get("registerTime")
+                
+                # Convert timestamps if available
+                import datetime
+                last_login_str = "N/A"
+                if last_login:
+                    try:
+                        last_login_str = datetime.datetime.fromtimestamp(last_login/1000).strftime('%Y-%m-%d %H:%M:%S')
+                    except:
+                        last_login_str = str(last_login)
+                
+                register_str = "N/A"
+                if register_time:
+                    try:
+                        register_str = datetime.datetime.fromtimestamp(register_time/1000).strftime('%Y-%m-%d %H:%M:%S')
+                    except:
+                        register_str = str(register_time)
+                
+                # Build response with all available info
                 response = f"""👤 <b>User Information</b>
 ├ ID: {user_id}
 ├ Email: {email}
+├ Nickname: {nickname}
 ├ Status: {status}
-└ KYC: {kyc}"""
+├ Auth Level: {auth_level}
+├ Mobile: {mobile}
+├ Country Code: {country_code}
+├ Invite Code: {invite_code}
+├ Is Agent: {is_agent}
+├ KYC Status: {kyc}
+├ KYC Levels: L1={kyc_level1}%, L2={kyc_level2}%, L3={kyc_level3}%
+├ KYC Max Auth Times: {max_auth_times}
+├ Last Login: {last_login_str}
+├ Register Time: {register_str}
+└ Token: {data.get("userToken", "N/A")[:20]}..."""
             else:
                 response = json.dumps(result, indent=2)
         except:
