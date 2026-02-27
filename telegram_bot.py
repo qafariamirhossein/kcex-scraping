@@ -150,6 +150,8 @@ I'm here to help you access KCEX trading functions directly from Telegram.
 /transfer - Transfer funds between wallets
 /order_deals - Get order deals/fills
 /history_orders - Get historical orders
+/open_position - Open a new position (single command)
+/open_position - Open a new position (one command)
 
 <b>Quick Tips:</b>
 • Use /help to see detailed information about each command
@@ -196,6 +198,8 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Example: /order_deals TRUMP_USDT 30
 /history_orders [symbol] [days] - Get historical orders
     Example: /history_orders TRUMP_USDT 30
+/open_position [symbol] [side] [qty] [leverage] [price] - Open position
+    Example: /open_position TRUMP_USDT BUY 1 20 3.427
 
 <b>Notes:</b>
 • Replace [symbol] with actual trading pair (e.g., BTC_USDT)
@@ -572,6 +576,140 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"✅ Bot is online!\nLatency: {latency}ms")
     except Exception as e:
         await update.message.reply_text(f"❌ Connection error: {str(e)}")
+
+
+import requests
+import hashlib
+import time
+
+
+# =========================
+# SIGN LIKE BROWSER - EXACT ALGORITHM
+# =========================
+def generate_signature(auth_token: str, timestamp: int, body: dict) -> str:
+    # Step 1: B = md5(auth_token + timestamp).substr(7)
+    token_ts = auth_token + str(timestamp)
+    B = hashlib.md5(token_ts.encode('utf-8')).hexdigest()[7:]
+    
+    # Step 2: bodyString = JSON.stringify(body) - default separators (space after colon)
+    body_string = json.dumps(body)
+    
+    # Step 3: sign = md5(timestamp + bodyString + B)
+    sign_input = str(timestamp) + body_string + B
+    sign = hashlib.md5(sign_input.encode('utf-8')).hexdigest()
+    
+    return sign
+
+
+async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /open_position command to open a position in one command.
+    
+    Usage: /open_position [symbol] [side] [quantity] [leverage] [price]
+    Example: /open_position TRUMP_USDT BUY 1 20 3.427
+    
+    Side: BUY (long) or SELL (short)
+    """
+    # Check if all required args were provided
+    if len(context.args) < 5:
+        await update.message.reply_text(
+            "ℹ️ Usage: /open_position [symbol] [side] [quantity] [leverage] [price]\n\n"
+            "Example: /open_position TRUMP_USDT BUY 1 20 3.427\n\n"
+            "• symbol: Trading pair (e.g., TRUMP_USDT)\n"
+            "• side: BUY (long) or SELL (short)\n"
+            "• quantity: Order volume\n"
+            "• leverage: Leverage level (e.g., 20)\n"
+            "• price: Order price\n\n"
+            "Type: LIMIT order"
+        )
+        return
+    
+    symbol = context.args[0].upper()
+    side_input = context.args[1].upper()
+    quantity = context.args[2]
+    leverage = context.args[3]
+    price = context.args[4]
+    
+    # Map side to API values: 3=BUY, 4=SELL
+    side = 3 if side_input == "BUY" else 4
+    
+    await update.message.reply_text(
+        f"🔄 Opening position...\n"
+        f"• Symbol: {symbol}\n"
+        f"• Side: {side_input}\n"
+        f"• Quantity: {quantity}\n"
+        f"• Leverage: {leverage}x\n"
+        f"• Price: {price}"
+    )
+    
+    # Get auth token from config
+    auth_token = Config.KCEX_AUTH_TOKEN
+    if not auth_token:
+        await update.message.reply_text("❌ Error: KCEX_AUTH_TOKEN not configured")
+        return
+    
+    # Build payload exactly like browser
+    payload = {
+        "symbol": symbol,
+        "side": side,
+        "openType": 1,
+        "type": 1,  # limit order
+        "vol": float(quantity),
+        "leverage": int(leverage),
+        "marketCeiling": 0,
+        "price": str(price),
+        "priceProtect": 0,
+        "bboPriceType": 1,
+    }
+    
+    # Generate signature
+    content_time = int(time.time() * 1000)
+    sign = generate_signature(auth_token, content_time, payload)
+    
+    url = "https://www.kcex.com/fapi/v1/private/order/create"
+    
+    headers = {
+        "accept": "*/*",
+        "accept-language": "en-US",
+        "accept-timezone": "UTC+03:30",
+        "authorization": auth_token,
+        "content-type": "application/json",
+        "content-sign": sign,
+        "content-time": str(content_time),
+        "language": "en-US",
+        "origin": "https://www.kcex.com",
+        "platform": "WEB",
+        "referer": f"https://www.kcex.com/futures/exchange/{symbol}?type=linear_swap",
+        "user-agent": "Mozilla/5.0",
+        "version": "1.0.0",
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            if result.get("code") == 0 or result.get("success"):
+                await update.message.reply_html(
+                    f"✅ <b>Position Opened!</b>\n\n"
+                    f"├ Symbol: {symbol}\n"
+                    f"├ Side: {side_input}\n"
+                    f"├ Quantity: {quantity}\n"
+                    f"├ Leverage: {leverage}x\n"
+                    f"├ Price: {price}\n"
+                    f"└ Order ID: {result.get('data', {}).get('orderId', 'N/A')}\n\n"
+                    f"<code>{json.dumps(result, indent=2)}</code>"
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ Order failed: {result.get('msg', result.get('message', 'Unknown error'))}"
+                )
+        else:
+            await update.message.reply_text(
+                f"❌ HTTP Error: {response.status_code}\n{response.text[:500]}"
+            )
+    except Exception as e:
+        logger.error(f"Open position error: {e}")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
 
 
 async def order_deals_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -984,6 +1122,7 @@ def main():
     application.add_handler(CommandHandler("ping", ping_command))
     application.add_handler(CommandHandler("order_deals", order_deals_command))
     application.add_handler(CommandHandler("history_orders", history_orders_command))
+    application.add_handler(CommandHandler("open_position", open_position_command))
     
     # Transfer conversation
     transfer_handler = ConversationHandler(
