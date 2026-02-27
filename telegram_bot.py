@@ -148,6 +148,8 @@ I'm here to help you access KCEX trading functions directly from Telegram.
 /close_position - Close a position
 /set_leverage - Set leverage for a symbol
 /transfer - Transfer funds between wallets
+/order_deals - Get order deals/fills
+/history_orders - Get historical orders
 
 <b>Quick Tips:</b>
 • Use /help to see detailed information about each command
@@ -190,6 +192,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 <b>🔧 Utility Commands:</b>
 /ping - Test bot connectivity
 /contracts - List all available contracts
+/order_deals [symbol] [days] - Get order deals/fills
+    Example: /order_deals TRUMP_USDT 30
+/history_orders [symbol] [days] - Get historical orders
+    Example: /history_orders TRUMP_USDT 30
 
 <b>Notes:</b>
 • Replace [symbol] with actual trading pair (e.g., BTC_USDT)
@@ -563,6 +569,129 @@ async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"❌ Connection error: {str(e)}")
 
 
+async def order_deals_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /order_deals command to get order deals/fills."""
+    # Check if symbol was provided
+    if not context.args:
+        await update.message.reply_text(
+            "ℹ️ Usage: /order_deals [symbol] [days]\n"
+            "Example: /order_deals TRUMP_USDT 30\n\n"
+            "Defaults to 30 days if not specified"
+        )
+        return
+    
+    symbol = context.args[0].upper()
+    days = int(context.args[1]) if len(context.args) > 1 else 30
+    
+    # Calculate timestamps (milliseconds)
+    import time
+    end_time = int(time.time() * 1000)
+    start_time = end_time - (days * 24 * 60 * 60 * 1000)
+    
+    await update.message.reply_text(f"🔄 Fetching order deals for {symbol} (last {days} days)...")
+    
+    # Side mapping: 1=BUY, 2=SELL, 3=CLOSE_LONG, 4=CLOSE_SHORT
+    side_map = {1: "BUY", 2: "SELL", 3: "CLOSE_LONG", 4: "CLOSE_SHORT"}
+    
+    try:
+        client, account, market, futures, orders = get_services()
+        result = orders.get_order_history(symbol, start_time, end_time)
+        client.close()
+        
+        # Format the response
+        try:
+            if isinstance(result, dict):
+                data = result.get("data", result.get("result", []))
+                if data:
+                    lines = [f"📋 <b>Order Deals for {symbol}</b>\n"]
+                    # Show up to 20 deals
+                    for deal in data[:20]:
+                        order_id = deal.get("orderId", "N/A")[:10] + "..." if len(deal.get("orderId", "")) > 10 else deal.get("orderId", "N/A")
+                        deal_id = deal.get("id", "N/A")
+                        price = deal.get("price", "N/A")
+                        qty = deal.get("vol", deal.get("quantity", "N/A"))
+                        side = deal.get("side", 0)
+                        side_str = side_map.get(side, str(side))
+                        emoji = "🟢" if side in [1, 3] else "🔴"
+                        lines.append(f"{emoji} {side_str} | {qty} @ {price} | Deal: {deal_id}")
+                    
+                    if len(data) > 20:
+                        lines.append(f"\n... and {len(data) - 20} more deals")
+                    
+                    response = "\n".join(lines)
+                else:
+                    response = f"No order deals found for {symbol}"
+            else:
+                response = str(result)
+        except Exception as e:
+            response = f"Error formatting: {e}\n\n{str(result)}"
+        
+        await update.message.reply_html(response)
+    except Exception as e:
+        logger.error(f"Error fetching order deals: {e}")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
+
+
+async def history_orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle /history_orders command to get historical orders."""
+    # Check if symbol was provided
+    if not context.args:
+        await update.message.reply_text(
+            "ℹ️ Usage: /history_orders [symbol] [days]\n"
+            "Example: /history_orders TRUMP_USDT 30\n\n"
+            "Defaults to 30 days if not specified"
+        )
+        return
+    
+    symbol = context.args[0].upper()
+    days = int(context.args[1]) if len(context.args) > 1 else 30
+    
+    # Calculate timestamps (milliseconds)
+    import time
+    end_time = int(time.time() * 1000)
+    start_time = end_time - (days * 24 * 60 * 60 * 1000)
+    
+    await update.message.reply_text(f"🔄 Fetching history orders for {symbol} (last {days} days)...")
+    
+    try:
+        client, account, market, futures, orders = get_services()
+        result = futures.get_history_orders(symbol, start_time, end_time)
+        client.close()
+        
+        # Format the response
+        try:
+            if isinstance(result, dict):
+                data = result.get("data", result.get("result", []))
+                if data:
+                    lines = [f"📋 <b>History Orders for {symbol}</b>\n"]
+                    # Show up to 15 orders
+                    for order in data[:15]:
+                        order_id = order.get("orderId", "N/A")[:10] + "..." if len(order.get("orderId", "")) > 10 else order.get("orderId", "N/A")
+                        side = order.get("side", "N/A")
+                        price = order.get("price", order.get("orderPrice", "N/A"))
+                        qty = order.get("qty", order.get("orderQty", "N/A"))
+                        status = order.get("status", order.get("orderStatus", "N/A"))
+                        emoji = "🟢" if side.upper() == "BUY" else "🔴"
+                        status_emoji = "✅" if status in ["FILLED", "COMPLETE"] else "❌" if status in ["CANCELLED", "REJECTED"] else "⏳"
+                        lines.append(f"{emoji} {side} | {qty} @ {price} | {status_emoji} {status} | ID: {order_id}")
+                    
+                    if len(data) > 15:
+                        lines.append(f"\n... and {len(data) - 15} more orders")
+                    
+                    response = "\n".join(lines)
+                else:
+                    response = f"No history orders found for {symbol}"
+            else:
+                response = str(result)
+        except Exception as e:
+            response = f"Error formatting: {e}\n\n{str(result)}"
+        
+        await update.message.reply_html(response)
+    except Exception as e:
+        logger.error(f"Error fetching history orders: {e}")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
+
+
 # ==================== Interactive Handlers ====================
 
 async def transfer_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -809,6 +938,8 @@ def main():
     application.add_handler(CommandHandler("ls_ratio", ls_ratio_command))
     application.add_handler(CommandHandler("contracts", contracts_command))
     application.add_handler(CommandHandler("ping", ping_command))
+    application.add_handler(CommandHandler("order_deals", order_deals_command))
+    application.add_handler(CommandHandler("history_orders", history_orders_command))
     
     # Transfer conversation
     transfer_handler = ConversationHandler(
