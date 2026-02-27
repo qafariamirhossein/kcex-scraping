@@ -37,6 +37,10 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO
 )
+
+# Suppress httpx library logging (very verbose)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 
@@ -83,19 +87,23 @@ def format_ticker(ticker: dict) -> str:
 
 def format_balance(balance: dict) -> str:
     """Format balance information for display."""
+    logger.info(f">>> format_balance() - Input: {balance}")
     try:
         if isinstance(balance, dict):
-            assets = balance.get("assets", [])
+            logger.info(f">>> format_balance() - Dict keys: {balance.keys()}")
+            # API returns data in "data" key, not "assets"
+            assets = balance.get("data", [])
+            logger.info(f">>> format_balance() - Assets list: {assets}")
             if not assets:
                 return "No assets found"
             
             lines = ["💰 <b>Account Balance</b>\n"]
             for asset in assets:
-                coin = asset.get("coin", "N/A")
-                available = asset.get("available", "0")
-                frozen = asset.get("frozen", "0")
-                total = asset.get("total", "0")
-                lines.append(f"├ {coin}: {available} (Free) | {frozen} (Frozen)")
+                coin = asset.get("currency", "N/A")
+                available = asset.get("availableBalance", asset.get("available", "0"))
+                frozen = asset.get("frozenBalance", asset.get("frozen", "0"))
+                total = asset.get("cashBalance", asset.get("equity", asset.get("total", "0")))
+                lines.append(f"├ {coin}: {available} (Free) | {frozen} (Frozen) | {total} (Total)")
             
             return "\n".join(lines)
         return str(balance)
@@ -197,8 +205,11 @@ async def account_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     try:
         client, account, market, futures, orders = get_services()
+        logger.info(">>> /account command - Calling account.get_assets()")
         result = account.get_assets()
+        logger.info(f">>> /account command - Raw API response: {result}")
         response = format_balance(result)
+        logger.info(f">>> /account command - Formatted response: {response}")
         client.close()
         
         await update.message.reply_html(response)

@@ -29,8 +29,9 @@ class AccountService:
         Returns:
             Dictionary containing account assets information
         """
+        logger.info(">>> Calling get_assets() - GET /fapi/v1/private/account/assets")
         response = self.client.get("/fapi/v1/private/account/assets")
-        logger.debug(f"Assets response: {truncate_response(str(response))}")
+        logger.info(f">>> get_assets() response: {response}")
         return response
     
     def get_available_languages(self) -> Dict[str, Any]:
@@ -60,8 +61,9 @@ class AccountService:
             - KYC status
             - Other profile details
         """
+        logger.info(">>> Calling get_user_info() - GET /uc/user_api/user_info")
         response = self.client.get("/uc/user_api/user_info")
-        logger.debug(f"User info response: {truncate_response(str(response))}")
+        logger.info(f">>> get_user_info() response: {response}")
         return response
     
     # ==================== Asset Transfer ====================

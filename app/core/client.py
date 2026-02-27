@@ -92,7 +92,16 @@ class BaseClient:
         if "headers" in kwargs:
             headers.update(kwargs.pop("headers"))
         
-        logger.debug(f"Making {method} request to {url}")
+        # Log the request details at INFO level
+        logger.info(f"========== REQUEST ==========")
+        logger.info(f"METHOD: {method}")
+        logger.info(f"URL: {url}")
+        logger.info(f"HEADERS: {headers}")
+        if "params" in kwargs:
+            logger.info(f"PARAMS: {kwargs['params']}")
+        if "json" in kwargs:
+            logger.info(f"BODY: {kwargs['json']}")
+        logger.info(f"=============================")
         
         try:
             response = self.client.request(
@@ -109,7 +118,11 @@ class BaseClient:
                     status_code=response.status_code
                 )
             
-            logger.debug(f"Response status: {response.status_code}")
+            # Log the response at INFO level
+            logger.info(f"========== RESPONSE =========")
+            logger.info(f"STATUS: {response.status_code}")
+            logger.info(f"BODY: {truncate_response(str(response.text), 500, 500)}")
+            logger.info(f"=============================")
             return response.json()
             
         except httpx.RequestError as e:
