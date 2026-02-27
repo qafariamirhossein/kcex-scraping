@@ -199,7 +199,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 /history_orders [symbol] [days] - Get historical orders
     Example: /history_orders TRUMP_USDT 30
 /open_position [symbol] [side] [qty] [leverage] [price] - Open position
-    Example: /open_position TRUMP_USDT BUY 1 20 3.427
+    Example: /open_position TRUMP_USDT LONG 1 20 3.427
 
 <b>Notes:</b>
 • Replace [symbol] with actual trading pair (e.g., BTC_USDT)
@@ -605,17 +605,17 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
     """Handle /open_position command to open a position in one command.
     
     Usage: /open_position [symbol] [side] [quantity] [leverage] [price]
-    Example: /open_position TRUMP_USDT BUY 1 20 3.427
+    Example: /open_position TRUMP_USDT LONG 1 20 3.427
     
-    Side: BUY (long) or SELL (short)
+    Side: LONG or SHORT
     """
     # Check if all required args were provided
     if len(context.args) < 5:
         await update.message.reply_text(
             "ℹ️ Usage: /open_position [symbol] [side] [quantity] [leverage] [price]\n\n"
-            "Example: /open_position TRUMP_USDT BUY 1 20 3.427\n\n"
+            "Example: /open_position TRUMP_USDT LONG 1 20 3.427\n\n"
             "• symbol: Trading pair (e.g., TRUMP_USDT)\n"
-            "• side: BUY (long) or SELL (short)\n"
+            "• side: LONG or SHORT\n"
             "• quantity: Order volume\n"
             "• leverage: Leverage level (e.g., 20)\n"
             "• price: Order price\n\n"
@@ -629,13 +629,19 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
     leverage = context.args[3]
     price = context.args[4]
     
-    # Map side to API values: 3=BUY, 4=SELL
-    side = 3 if side_input == "BUY" else 4
+    # Map side to API values: 1=LONG (BUY_OPEN), 3=SHORT (SELL_OPEN)
+    # Accept both LONG/SHORT and BUY/SELL for backward compatibility
+    if side_input in ("LONG", "BUY"):
+        side = 1
+        side_display = "LONG"
+    else:  # SHORT or SELL
+        side = 3  # Use 3 for SHORT (SELL_OPEN)
+        side_display = "SHORT"
     
     await update.message.reply_text(
         f"🔄 Opening position...\n"
         f"• Symbol: {symbol}\n"
-        f"• Side: {side_input}\n"
+        f"• Side: {side_display}\n"
         f"• Quantity: {quantity}\n"
         f"• Leverage: {leverage}x\n"
         f"• Price: {price}"
@@ -692,7 +698,7 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
                 await update.message.reply_html(
                     f"✅ <b>Position Opened!</b>\n\n"
                     f"├ Symbol: {symbol}\n"
-                    f"├ Side: {side_input}\n"
+                    f"├ Side: {side_display}\n"
                     f"├ Quantity: {quantity}\n"
                     f"├ Leverage: {leverage}x\n"
                     f"├ Price: {price}\n"

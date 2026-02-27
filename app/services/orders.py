@@ -42,7 +42,7 @@ class OrderService:
         
         Args:
             symbol: Trading symbol (e.g., "TRUMP_USDT", "BTC_USDT")
-            side: Order side (1 = BUY, 3 = SELL)
+            side: Order side (1 = BUY_OPEN/LONG, 3 = SELL_OPEN/SHORT, 4 = BUY_CLOSE)
             open_type: Open type (1 = open position)
             order_type: Order type ("1" = Limit, "2" = Market, etc.)
             volume: Order volume/quantity
@@ -93,7 +93,7 @@ class OrderService:
         self,
         symbol: str,
         position_id: int,
-        side: int,
+        side: int = 2,
         open_type: int = 1,
         order_type: str = "1",
         volume: int = 1,
@@ -112,7 +112,7 @@ class OrderService:
         Args:
             symbol: Trading symbol (e.g., "TRUMP_USDT", "BTC_USDT")
             position_id: The position ID to close
-            side: Order side (1 = BUY to close SELL, 3 = SELL to close BUY)
+            side: Order side (2 = SELL to close LONG, 4 = BUY to close SHORT)
             open_type: Open type (1 = open position, 2 = close position)
             order_type: Order type ("1" = Limit, "2" = Market, etc.)
             volume: Order volume/quantity
