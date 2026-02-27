@@ -339,14 +339,15 @@ async def tickers_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     response = "No tickers found"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error formatting: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting: {e}")
+            response = f"Error formatting: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching tickers: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def ticker_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -430,14 +431,15 @@ async def leverage_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     response = "No leverage tiers found"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting leverage tiers: {e}")
+            response = f"Error: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching leverage: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def positions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -466,14 +468,15 @@ async def positions_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     response = "No open positions"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting positions: {e}")
+            response = f"Error: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching positions: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def ls_ratio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -505,14 +508,15 @@ async def ls_ratio_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 ├ Ratio: {long_ratio or ratio}
 └ Trend: {emoji} {"Bullish" if float(long_ratio or ratio or 0) > 0.5 else "Bearish"}"""
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting ls ratio: {e}")
+            response = f"Error: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching ls ratio: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def contracts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -542,14 +546,15 @@ async def contracts_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 else:
                     response = "No contracts found"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting contracts: {e}")
+            response = f"Error: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching contracts: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def ping_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -622,14 +627,15 @@ async def order_deals_command(update: Update, context: ContextTypes.DEFAULT_TYPE
                 else:
                     response = f"No order deals found for {symbol}"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error formatting: {e}\n\n{str(result)}"
+            logger.error(f"Error formatting order deals: {e}")
+            response = f"Error formatting: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching order deals: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 async def history_orders_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -666,30 +672,68 @@ async def history_orders_command(update: Update, context: ContextTypes.DEFAULT_T
                     lines = [f"📋 <b>History Orders for {symbol}</b>\n"]
                     # Show up to 15 orders
                     for order in data[:15]:
-                        order_id = order.get("orderId", "N/A")[:10] + "..." if len(order.get("orderId", "")) > 10 else order.get("orderId", "N/A")
-                        side = order.get("side", "N/A")
-                        price = order.get("price", order.get("orderPrice", "N/A"))
-                        qty = order.get("qty", order.get("orderQty", "N/A"))
-                        status = order.get("status", order.get("orderStatus", "N/A"))
-                        emoji = "🟢" if side.upper() == "BUY" else "🔴"
-                        status_emoji = "✅" if status in ["FILLED", "COMPLETE"] else "❌" if status in ["CANCELLED", "REJECTED"] else "⏳"
+                        order_id = order.get("orderId", "N/A")
+                        
+                        # side: 1 = BUY, 2 = SELL
+                        side_num = order.get("side", "N/A")
+                        if side_num == 1:
+                            side = "BUY"
+                            emoji = "🟢"
+                        elif side_num == 2:
+                            side = "SELL"
+                            emoji = "🔴"
+                        elif side_num == 3:
+                            side = "BUY"
+                            emoji = "🟢"
+                        elif side_num == 4:
+                            side = "SELL"  
+                            emoji = "🔴"
+                        else:
+                            side = str(side_num) if side_num != "N/A" else "?"
+                            emoji = "⚪"
+                        
+                        # Use 'vol' for quantity (not 'qty')
+                        qty = order.get("vol", order.get("dealVol", "N/A"))
+                        price = order.get("price", order.get("dealAvgPrice", "N/A"))
+                        
+                        # state: 3 = filled/completed
+                        state = order.get("state", "N/A")
+                        if state == 3:
+                            status = "FILLED"
+                            status_emoji = "✅"
+                        elif state == 4:
+                            status = "CANCELLED"
+                            status_emoji = "❌"
+                        elif state == 2:
+                            status = "PARTIAL"
+                            status_emoji = "⏳"
+                        else:
+                            status = str(state)
+                            status_emoji = "⚪"
+                        
                         lines.append(f"{emoji} {side} | {qty} @ {price} | {status_emoji} {status} | ID: {order_id}")
                     
                     if len(data) > 15:
                         lines.append(f"\n... and {len(data) - 15} more orders")
                     
                     response = "\n".join(lines)
+                    
+                    # Check if message is too long for Telegram (4096 chars limit)
+                    if len(response) > 4000:
+                        response = response[:4000] + "\n... (truncated)"
                 else:
                     response = f"No history orders found for {symbol}"
             else:
-                response = str(result)
+                response = str(result)[:4000]  # Limit string length
         except Exception as e:
-            response = f"Error formatting: {e}\n\n{str(result)}"
+            # Don't include full result in error message to avoid "Message too long"
+            logger.error(f"Error formatting history orders: {e}")
+            response = f"Error formatting response: {str(e)[:200]}"
         
         await update.message.reply_html(response)
     except Exception as e:
         logger.error(f"Error fetching history orders: {e}")
-        await update.message.reply_text(f"❌ Error: {str(e)}")
+        await update.message.reply_text(f"❌ Error: {str(e)[:500]}")
 
 
 # ==================== Interactive Handlers ====================
