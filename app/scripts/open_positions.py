@@ -35,6 +35,14 @@ url = "https://www.kcex.com/fapi/v1/private/order/create"
 # BUILD BODY EXACTLY LIKE BROWSER
 # ORDER MATTERS
 # =========================
+
+# Set stop loss and take profit
+stop_loss_price = "3.331"
+take_profit_price = "3.394"
+
+# Use bboPriceType 1 if no SL/TP, otherwise use 0 (BBO orders don't support SL/TP)
+bbo_price_type = 1 if not stop_loss_price and not take_profit_price else 0
+
 payload = {
     # ---- order fields (A) ----
     "symbol": "TRUMP_USDT",
@@ -46,8 +54,16 @@ payload = {
     "marketCeiling": 0,        # browser usually uses 0/1 not true/false
     "price": "3.427",
     "priceProtect": 0,
-    "bboPriceType": 1,
+    "bboPriceType": bbo_price_type,
 }
+
+# ---- stop loss / take profit ----
+if stop_loss_price:
+    payload["stopLossPrice"] = stop_loss_price
+    payload["lossTrend"] = "1"
+if take_profit_price:
+    payload["takeProfitPrice"] = take_profit_price
+    payload["profitTrend"] = "1"
 
 # =========================
 # SIGN AFTER BODY COMPLETE

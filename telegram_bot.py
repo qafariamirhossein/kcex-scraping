@@ -612,13 +612,15 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
     # Check if all required args were provided
     if len(context.args) < 5:
         await update.message.reply_text(
-            "ℹ️ Usage: /open_position [symbol] [side] [quantity] [leverage] [price]\n\n"
-            "Example: /open_position TRUMP_USDT LONG 1 20 3.427\n\n"
+            "ℹ️ Usage: /open_position [symbol] [side] [quantity] [leverage] [price] [stop_loss] [take_profit]\n\n"
+            "Example: /open_position TRUMP_USDT LONG 1 20 3.427 3.331 3.394\n\n"
             "• symbol: Trading pair (e.g., TRUMP_USDT)\n"
             "• side: LONG or SHORT\n"
             "• quantity: Order volume\n"
             "• leverage: Leverage level (e.g., 20)\n"
-            "• price: Order price\n\n"
+            "• price: Order price\n"
+            "• stop_loss: Stop loss price (optional)\n"
+            "• take_profit: Take profit price (optional)\n\n"
             "Type: LIMIT order"
         )
         return
@@ -629,6 +631,10 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
     leverage = context.args[3]
     price = context.args[4]
     
+    # Optional stop loss and take profit
+    stop_loss = context.args[5] if len(context.args) > 5 else None
+    take_profit = context.args[6] if len(context.args) > 6 else None
+    
     # Map side to API values: 1=LONG (BUY_OPEN), 3=SHORT (SELL_OPEN)
     # Accept both LONG/SHORT and BUY/SELL for backward compatibility
     if side_input in ("LONG", "BUY"):
@@ -638,7 +644,8 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
         side = 3  # Use 3 for SHORT (SELL_OPEN)
         side_display = "SHORT"
     
-    await update.message.reply_text(
+    # Build status message
+    status_msg = (
         f"🔄 Opening position...\n"
         f"• Symbol: {symbol}\n"
         f"• Side: {side_display}\n"
@@ -646,12 +653,23 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
         f"• Leverage: {leverage}x\n"
         f"• Price: {price}"
     )
+    if stop_loss:
+        status_msg += f"\n• Stop Loss: {stop_loss}"
+    if take_profit:
+        status_msg += f"\n• Take Profit: {take_profit}"
+    
+    await update.message.reply_text(status_msg)
     
     # Get auth token from config
     auth_token = Config.KCEX_AUTH_TOKEN
     if not auth_token:
         await update.message.reply_text("❌ Error: KCEX_AUTH_TOKEN not configured")
         return
+    
+    logger.info(f"Open position request - symbol: {symbol}, side: {side_display}, quantity: {quantity}, leverage: {leverage}, price: {price}, stop_loss: {stop_loss}, take_profit: {take_profit}")
+    
+    # Use bboPriceType 1 if no SL/TP, otherwise use 0 (BBO orders don't support SL/TP)
+    bbo_price_type = 1 if not stop_loss and not take_profit else 0
     
     # Build payload exactly like browser
     payload = {
@@ -664,8 +682,18 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
         "marketCeiling": 0,
         "price": str(price),
         "priceProtect": 0,
-        "bboPriceType": 1,
+        "bboPriceType": bbo_price_type,
     }
+    
+    # Add stop loss and take profit if provided
+    if stop_loss:
+        payload["stopLossPrice"] = str(stop_loss)
+        payload["lossTrend"] = "1"
+    if take_profit:
+        payload["takeProfitPrice"] = str(take_profit)
+        payload["profitTrend"] = "1"
+    
+    logger.info(f"Order payload: {json.dumps(payload)}")
     
     # Generate signature
     content_time = int(time.time() * 1000)
@@ -690,21 +718,29 @@ async def open_position_command(update: Update, context: ContextTypes.DEFAULT_TY
     }
     
     try:
+        logger.info(f"Sending order request to {url}")
         response = requests.post(url, headers=headers, json=payload, timeout=30)
+        logger.info(f"Response status: {response.status_code}, body: {response.text}")
         
         if response.status_code == 200:
             result = response.json()
             if result.get("code") == 0 or result.get("success"):
-                await update.message.reply_html(
+                # Build success message
+                success_msg = (
                     f"✅ <b>Position Opened!</b>\n\n"
                     f"├ Symbol: {symbol}\n"
                     f"├ Side: {side_display}\n"
                     f"├ Quantity: {quantity}\n"
                     f"├ Leverage: {leverage}x\n"
-                    f"├ Price: {price}\n"
-                    f"└ Order ID: {result.get('data', {}).get('orderId', 'N/A')}\n\n"
-                    f"<code>{json.dumps(result, indent=2)}</code>"
+                    f"├ Price: {price}"
                 )
+                if stop_loss:
+                    success_msg += f"\n├ Stop Loss: {stop_loss}"
+                if take_profit:
+                    success_msg += f"\n├ Take Profit: {take_profit}"
+                success_msg += f"\n└ Order ID: {result.get('data', {}).get('orderId', 'N/A')}\n\n<code>{json.dumps(result, indent=2)}</code>"
+                
+                await update.message.reply_html(success_msg)
             else:
                 await update.message.reply_text(
                     f"❌ Order failed: {result.get('msg', result.get('message', 'Unknown error'))}"
